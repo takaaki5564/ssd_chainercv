@@ -1,5 +1,7 @@
 # ssd from scratch
 
+now on debugging
+
 ## trainvgg
 
 Train VGG-like network with this script
