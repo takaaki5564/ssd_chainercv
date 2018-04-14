@@ -2,7 +2,7 @@
 
 now on debugging
 
-## trainvgg
+## train_vgg
 
 Train VGG-like network with this script
 
