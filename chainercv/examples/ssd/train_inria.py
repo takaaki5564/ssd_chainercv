@@ -14,9 +14,6 @@ from chainer.training import triggers
 from chainercv.datasets import voc_bbox_label_names
 from chainercv.datasets import VOCBboxDataset
 from chainercv.extensions import DetectionVOCEvaluator
-from chainercv.datasets import inria_bbox_label_names
-from chainercv.datasets import INRIABboxDataset
-from chainercv.extensions import DetectionINRIAEvaluator
 from chainercv.links.model.ssd import GradientScaling
 from chainercv.links.model.ssd import multibox_loss
 from chainercv.links import SSD300
@@ -41,7 +38,7 @@ class MultiboxTrainChain(chainer.Chain):
         mb_locs, mb_confs = self.model(imgs)
         loc_loss, conf_loss = multibox_loss(
             mb_locs, mb_confs, gt_mb_locs, gt_mb_labels, self.k)
-        loss = loc_loss * self.alpha + conf_loss * 2.0
+        loss = loc_loss * self.alpha + conf_loss
 
         chainer.reporter.report(
             {'loss': loss, 'loss/loc': loc_loss, 'loss/conf': conf_loss},
@@ -110,18 +107,21 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--model', choices=('ssd300', 'ssd512'), default='ssd300')
-    parser.add_argument('--batchsize', type=int, default=16)
-    parser.add_argument('--gpu', type=int, default=0)
-    parser.add_argument('--out', default='result_ssd_5layer')
+    parser.add_argument('--batchsize', type=int, default=1)
+    parser.add_argument('--gpu', type=int, default=-1)
+    parser.add_argument('--out', default='result')
     parser.add_argument('--resume')
     args = parser.parse_args()
 
-    model = SSD300(
-        n_fg_class=len(inria_bbox_label_names),
-        #pretrained_model='./ssd_vgg16_imagenet_2017_06_09.npz')
-        pretrained_model='./model_vgg_5layer')
-    print("###n_fg_class= ", len(inria_bbox_label_names))
-    
+    if args.model == 'ssd300':
+        model = SSD300(
+            n_fg_class=len(voc_bbox_label_names),
+            pretrained_model='./ssd_vgg16_imagenet_2017_06_09.npz')
+    elif args.model == 'ssd512':
+        model = SSD512(
+            n_fg_class=len(voc_bbox_label_names),
+            pretrained_model='imagenet')
+
     model.use_preset('evaluate')
     train_chain = MultiboxTrainChain(model)
     if args.gpu >= 0:
@@ -130,12 +130,14 @@ def main():
 
     train = TransformDataset(
         ConcatenatedDataset(
-            INRIABboxDataset(data_dir='../INRIAPerson', split='Train')
+            VOCBboxDataset(year='2007', split='person_train')
         ),
         Transform(model.coder, model.insize, model.mean))
-    train_iter = chainer.iterators.SerialIterator(train, args.batchsize)
+    train_iter = chainer.iterators.MultiprocessIterator(train, args.batchsize)
 
-    test = INRIABboxDataset(data_dir='../INRIAPerson', split='Test')
+    test = VOCBboxDataset(
+        year='2007', split='person_test',
+        use_difficult=True, return_difficult=True)
     test_iter = chainer.iterators.SerialIterator(
         test, args.batchsize, repeat=False, shuffle=False)
 
@@ -149,18 +151,18 @@ def main():
             param.update_rule.add_hook(WeightDecay(0.0005))
 
     updater = training.StandardUpdater(train_iter, optimizer, device=args.gpu)
-    trainer = training.Trainer(updater, (800, 'iteration'), args.out)
+    trainer = training.Trainer(updater, (120000, 'iteration'), args.out)
     trainer.extend(
-        extensions.ExponentialShift('lr', 0.1, init=1e-4),
-        trigger=triggers.ManualScheduleTrigger([600, 1500], 'iteration'))
+        extensions.ExponentialShift('lr', 0.1, init=1e-3),
+        trigger=triggers.ManualScheduleTrigger([80000, 100000], 'iteration'))
 
     trainer.extend(
-        DetectionINRIAEvaluator(
+        DetectionVOCEvaluator(
             test_iter, model, use_07_metric=True,
-            label_names=inria_bbox_label_names),
-        trigger=(100, 'iteration'))
+            label_names=voc_bbox_label_names),
+        trigger=(10000, 'iteration'))
 
-    log_interval = 2, 'iteration'
+    log_interval = 1, 'iteration'
     trainer.extend(extensions.LogReport(trigger=log_interval))
     trainer.extend(extensions.observe_lr(), trigger=log_interval)
     trainer.extend(extensions.PrintReport(
@@ -168,12 +170,12 @@ def main():
          'main/loss', 'main/loss/loc', 'main/loss/conf',
          'validation/main/map']),
         trigger=log_interval)
-    trainer.extend(extensions.ProgressBar(update_interval=2))
+    trainer.extend(extensions.ProgressBar(update_interval=1))
 
-    trainer.extend(extensions.snapshot(), trigger=(200, 'iteration'))
+    trainer.extend(extensions.snapshot(), trigger=(10000, 'iteration'))
     trainer.extend(
         extensions.snapshot_object(model, 'model_iter_{.updater.iteration}'),
-        trigger=(100, 'iteration'))
+        trigger=(120000, 'iteration'))
 
     if args.resume:
         serializers.load_npz(args.resume, trainer)

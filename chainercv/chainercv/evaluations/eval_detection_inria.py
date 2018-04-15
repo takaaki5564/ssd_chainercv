@@ -108,15 +108,22 @@ def calc_detection_inria_prec_rec(
     prec = [None] * n_fg_class
     rec = [None] * n_fg_class
 
+    print("###n_pos.keys()= ", n_pos.keys())
     for l in n_pos.keys():
         score_l = np.array(score[l])
         match_l = np.array(match[l], dtype=np.int8)
+        print("###score_l= ", len(score_l), score_l)
+        print("###match_l= ", len(match_l), match_l)
 
         order = score_l.argsort()[::-1]
         match_l = match_l[order]
 
         tp = np.cumsum(match_l == 1)
         fp = np.cumsum(match_l == 0)
+        
+        print("###tp= ", len(tp), tp)
+        print("###fp= ", len(fp), fp)
+        print("###n_pos[l]= ", n_pos[l])
 
         # If an element of fp + tp is 0,
         # the corresponding element of prec[l] is nan.
@@ -125,19 +132,22 @@ def calc_detection_inria_prec_rec(
         if n_pos[l] > 0:
             rec[l] = tp / n_pos[l]
 
+        print("###rec= ", len(rec[l]), rec[l])
     return prec, rec
 
 
 def calc_detection_inria_ap(prec, rec, use_07_metric=False):
 
     n_fg_class = len(prec)
+    print("### n_fg_class=", len(prec))
     ap = np.empty(n_fg_class)
     for l in six.moves.range(n_fg_class):
         if prec[l] is None or rec[l] is None:
             ap[l] = np.nan
             continue
 
-        if use_07_metric:
+        #if use_07_metric:
+        if 0:
             # 11 point metric
             ap[l] = 0
             for t in np.arange(0., 1.1, 0.1):
@@ -157,6 +167,9 @@ def calc_detection_inria_ap(prec, rec, use_07_metric=False):
             # to calculate area under PR curve, look for points
             # where X axis (recall) changes value
             i = np.where(mrec[1:] != mrec[:-1])[0]
+            print("### len(i)=", len(i), i)
+            print("### mrec[i]=", mrec[i])
+            print("### mpre[i]=", mpre[i])
 
             # and sum (\Delta recall) * prec
             ap[l] = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])

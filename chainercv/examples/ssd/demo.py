@@ -39,7 +39,6 @@ def main():
     vis_bbox(
         img, bbox, label, score, label_names=voc_bbox_label_names)
     plot.show()
-    plot.savefig("{0}_result.png".format(args.image))
 
 
 if __name__ == '__main__':

@@ -145,7 +145,7 @@ class VOCBboxDataset(chainer.dataset.DatasetMixin):
         difficult = np.array(difficult, dtype=np.bool)
 
         # Load a image
-        img_file = os.path.join(self.data_dir, 'JPEGImages', id_ + '.jpg')
+        img_file = os.path.join(self.data_dir, 'JPEGImages', id_ + '.png')
         img = read_image(img_file, color=True)
         if self.return_difficult:
             return img, bbox, label, difficult
