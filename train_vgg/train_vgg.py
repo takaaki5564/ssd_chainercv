@@ -43,15 +43,6 @@ class tinyVGG(chainer.Chain):
 		h = F.relu( F.dropout( self.conv4(h), ratio=0.5 ))
 		h = self.fc4(h)
 		
-		#h = F.max_pooling_2d(F.relu(self.conv1(x)), 2, stride=2)
-		#h = F.relu(self.conv2_1(h))
-		#h = F.max_pooling_2d(F.relu(self.conv2_2(h)), 2, stride=2)
-		#h = F.relu(self.conv3(h))
-		#h = self.fc4(h)
-		#loss = F.softmax_cross_entropy(h, t)
-		#chainer.report({'loss': loss, 'accuracy': F.accuracy(h, t)}, self)
-		#return loss
-		
 		return h
 
 
@@ -70,11 +61,11 @@ def load_file( fname ):
 def main():
 
 	parser = argparse.ArgumentParser(description='Training tiny VGG16')
-	parser.add_argument('--batchsize', '-B', type=int, default=2,
+	parser.add_argument('--batchsize', '-B', type=int, default=16,
 		                help='Learning minibatch size')
 	parser.add_argument('--epoch', '-E', type=int, default=100,
 		                help='Number of epochs to train')
-	parser.add_argument('--gpu', '-g', type=int, default=-1,
+	parser.add_argument('--gpu', '-g', type=int, default=0,
 		                help='GPU ID (negative value indicates CPU')
 	parser.add_argument('--initmodel',
 		                help='Initialize the model from given file')
