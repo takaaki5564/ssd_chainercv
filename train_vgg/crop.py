@@ -7,10 +7,10 @@ import numpy as np
 import chainer
 import sys
 
-train_pos_dir = '../INRIAPerson/train_64x128_H96/pos'
-train_neg_dir = '../INRIAPerson/train_64x128_H96/neg'
-test_pos_dir = '../INRIAPerson/test_64x128_H96/pos'
-test_neg_dir = '../INRIAPerson/test_64x128_H96/neg'
+train_pos_dir = '../../INRIAPerson/train_64x128_H96/pos'
+train_neg_dir = '../../INRIAPerson/train_64x128_H96/neg'
+test_pos_dir = '../../INRIAPerson/test_64x128_H96/pos'
+test_neg_dir = '../../INRIAPerson/test_64x128_H96/neg'
 result_dir = './inria_images'
 
 crop_size = (64, 128)
@@ -141,13 +141,14 @@ def append_data(imgs, labels, input_dir, label,
 		#	break
 	
 	img_arr = np.asarray(imgs)
-	print('load images N={0} as label={1} from dir={2}'.format(cnt, label, input_dir))
+	#print('load images N={0} as label={1} from dir={2}'.format(cnt, label, input_dir))
 	
 	label_arr = np.asarray(labels)
 
 
 def main():
 
+	print('Start cropping images...')
 	train_imgs = []
 	train_labels = []
 	test_imgs = []
@@ -163,12 +164,6 @@ def main():
 	append_data(train_imgs, train_labels, train_neg_dir, 0, False, False, True, False, (0, 0))
 	append_data(train_imgs, train_labels, train_pos_dir, 1, False, False, False, True, (0, 0))
 	append_data(train_imgs, train_labels, train_neg_dir, 0, False, False, False, True, (0, 0))
-
-	#append_data(train_imgs, train_labels, train_neg_dir, 0, False, False, False, False, (5, 0))
-	#append_data(train_imgs, train_labels, train_neg_dir, 0, False, False, False, False, (-5, 0))
-	#append_data(train_imgs, train_labels, train_neg_dir, 0, False, False, False, False, (0, 5))
-	#append_data(train_imgs, train_labels, train_neg_dir, 0, False, False, False, False, (-0, 5))
-
 	append_data(test_imgs, test_labels, test_pos_dir, 1, False, False, False, False, (0, 0))
 	append_data(test_imgs, test_labels, test_pos_dir, 1, True, False, False, False, (0, 0))
 	append_data(test_imgs, test_labels, test_pos_dir, 1, False, True, False, False, (0, 0))
